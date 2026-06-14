@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {"type": "string", "metadata": {"description": "Name of the Log Analytics / Sentinel workspace"}}
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2022-11-01-preview",
+      "name": "[concat(parameters('workspace'), '/Microsoft.SecurityInsights/', '4f9d1a10-2c3b-4e6a-9b21-aa1100000002')]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Entra ID - Impossible travel between successful sign-ins",
+        "description": "Two successful sign-ins for the same user imply a travel speed > 900 km/h over > 500 km. Complements Entra Identity Protection; tune speed/distance to reduce VPN false positives.",
+        "severity": "High",
+        "enabled": true,
+        "query": "SigninLogs | where ResultType == 0 | extend lat=toreal(LocationDetails.geoCoordinates.latitude), lon=toreal(LocationDetails.geoCoordinates.longitude), City=tostring(LocationDetails.city) | where isnotempty(lat) | order by UserPrincipalName asc, TimeGenerated asc | serialize | extend pLat=prev(lat), pLon=prev(lon), pTime=prev(TimeGenerated), pUser=prev(UserPrincipalName), pCity=prev(City) | where pUser == UserPrincipalName | extend DistanceKm=2*6371*asin(sqrt(pow(sin((radians(lat)-radians(pLat))/2),2)+cos(radians(pLat))*cos(radians(lat))*pow(sin((radians(lon)-radians(pLon))/2),2))) | extend HoursApart=datetime_diff('minute',TimeGenerated,pTime)/60.0 | extend SpeedKmh=iff(HoursApart>0,DistanceKm/HoursApart,0.0) | where SpeedKmh > 900 and DistanceKm > 500 | project TimeGenerated, UserPrincipalName, FromCity=pCity, ToCity=City, DistanceKm=round(DistanceKm,0), SpeedKmh=round(SpeedKmh,0)",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT6H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": ["InitialAccess"],
+        "techniques": ["T1078"],
+        "entityMappings": [
+          {"entityType": "Account", "fieldMappings": [{"identifier": "FullName", "columnName": "UserPrincipalName"}]}
+        ]
+      }
+    }
+  ]
+}

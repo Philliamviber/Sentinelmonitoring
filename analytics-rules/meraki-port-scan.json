@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {"type": "string", "metadata": {"description": "Name of the Log Analytics / Sentinel workspace"}}
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2022-11-01-preview",
+      "name": "[concat(parameters('workspace'), '/Microsoft.SecurityInsights/', '4f9d1a10-2c3b-4e6a-9b21-aa1100000003')]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Meraki - Port scan / host sweep",
+        "description": "A single source contacts more than 50 distinct destination ports on a host within the window (Network Service Discovery). Tune the port threshold to your environment's vulnerability scanners.",
+        "severity": "Medium",
+        "enabled": true,
+        "query": "CommonSecurityLog | where DeviceVendor has 'Cisco' or DeviceProduct has 'Meraki' | summarize DistinctPorts=dcount(DestinationPort), Ports=make_set(DestinationPort,100) by SourceIP, DestinationIP, bin(TimeGenerated,1h) | where DistinctPorts > 50",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": ["Discovery"],
+        "techniques": ["T1046"],
+        "entityMappings": [
+          {"entityType": "IP", "fieldMappings": [{"identifier": "Address", "columnName": "SourceIP"}]}
+        ]
+      }
+    }
+  ]
+}

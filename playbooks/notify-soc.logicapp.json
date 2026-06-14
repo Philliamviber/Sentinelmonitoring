@@ -1,0 +1,60 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "playbookName": {"type": "string", "defaultValue": "Notify-SOC", "metadata": {"description": "Logic App / playbook name"}},
+    "location": {"type": "string", "defaultValue": "[resourceGroup().location]"},
+    "teamsChannelWebhook": {"type": "securestring", "metadata": {"description": "Incoming webhook URL for the SOC Teams channel"}}
+  },
+  "resources": [
+    {
+      "type": "Microsoft.Logic/workflows",
+      "apiVersion": "2019-05-01",
+      "name": "[parameters('playbookName')]",
+      "location": "[parameters('location')]",
+      "identity": {"type": "SystemAssigned"},
+      "properties": {
+        "state": "Enabled",
+        "definition": {
+          "$schema": "https://schema.management.azure.com/providers/Microsoft.Logic/schemas/2016-06-01/workflowdefinition.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {"teamsChannelWebhook": {"type": "securestring", "defaultValue": "[parameters('teamsChannelWebhook')]"}},
+          "triggers": {
+            "When_a_Sentinel_incident_is_created": {
+              "type": "ApiConnectionWebhook",
+              "inputs": {
+                "host": {"connection": {"name": "@parameters('$connections')['azuresentinel']['connectionId']"}},
+                "body": {"callback_url": "@{listCallbackUrl()}"},
+                "path": "/incident-creation"
+              }
+            }
+          },
+          "actions": {
+            "Post_card_to_SOC_channel": {
+              "type": "Http",
+              "inputs": {
+                "method": "POST",
+                "uri": "@parameters('teamsChannelWebhook')",
+                "body": {
+                  "title": "Sentinel incident: @{triggerBody()?['object']?['properties']?['title']}",
+                  "text": "Severity: @{triggerBody()?['object']?['properties']?['severity']}  |  Owner: unassigned  |  Open in Sentinel: @{triggerBody()?['object']?['properties']?['incidentUrl']}"
+                }
+              }
+            }
+          }
+        },
+        "parameters": {
+          "$connections": {
+            "value": {
+              "azuresentinel": {
+                "connectionId": "[resourceId('Microsoft.Web/connections', 'azuresentinel')]",
+                "connectionName": "azuresentinel",
+                "id": "[concat('/subscriptions/', subscription().subscriptionId, '/providers/Microsoft.Web/locations/', parameters('location'), '/managedApis/azuresentinel')]"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

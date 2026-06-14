@@ -1,0 +1,30 @@
+id: 9c2e7b10-0001-4a51-9f00-aa2200000001
+name: New user adopting legacy authentication
+description: |
+  Surfaces users seen using legacy/basic auth protocols (which bypass MFA) for the
+  first time in the lookback window. New legacy-auth usage is often attacker tradecraft
+  to evade Conditional Access. Run daily.
+severity: Medium
+requiredDataConnectors:
+  - connectorId: AzureActiveDirectory
+    dataTypes:
+      - SigninLogs
+tactics:
+  - InitialAccess
+  - DefenseEvasion
+relevantTechniques:
+  - T1078
+  - T1556
+query: |
+  let lookback = 14d;
+  let recent = 1d;
+  let known = SigninLogs
+    | where TimeGenerated between (ago(lookback) .. ago(recent))
+    | where ClientAppUsed in ('Other clients','IMAP4','POP3','SMTP','Exchange ActiveSync','Authenticated SMTP','MAPI Over HTTP')
+    | distinct UserPrincipalName;
+  SigninLogs
+  | where TimeGenerated > ago(recent)
+  | where ClientAppUsed in ('Other clients','IMAP4','POP3','SMTP','Exchange ActiveSync','Authenticated SMTP','MAPI Over HTTP')
+  | where UserPrincipalName !in (known)
+  | summarize Attempts=count(), Apps=make_set(ClientAppUsed), IPs=make_set(IPAddress, 20) by UserPrincipalName
+  | sort by Attempts desc

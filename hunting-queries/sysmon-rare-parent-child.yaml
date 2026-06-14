@@ -1,0 +1,26 @@
+id: 9c2e7b10-0003-4a51-9f00-aa2200000003
+name: Sysmon - rare process execution by host
+description: |
+  Frequency-analysis hunt: finds processes that are rare across the estate and recent,
+  which often indicates novel tooling or living-off-the-land abuse. Works on the Event
+  table without the Sysmon parser by matching on RenderedDescription. Triage the rarest.
+severity: Low
+requiredDataConnectors:
+  - connectorId: SecurityEvents
+    dataTypes:
+      - Event
+tactics:
+  - Execution
+relevantTechniques:
+  - T1059
+  - T1218
+query: |
+  let lookback = 14d;
+  Event
+  | where TimeGenerated > ago(lookback)
+  | where Source == 'Microsoft-Windows-Sysmon' and EventID == 1
+  | extend Img = extract(@'Image:\s*([^\r\n]+)', 1, RenderedDescription)
+  | where isnotempty(Img)
+  | summarize Hosts=dcount(Computer), Executions=count(), FirstSeen=min(TimeGenerated), LastSeen=max(TimeGenerated) by Img
+  | where Hosts <= 2 and Executions <= 5 and LastSeen > ago(1d)
+  | sort by Executions asc

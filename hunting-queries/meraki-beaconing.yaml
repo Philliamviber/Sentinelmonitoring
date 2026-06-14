@@ -1,0 +1,29 @@
+id: 9c2e7b10-0002-4a51-9f00-aa2200000002
+name: Meraki - possible C2 beaconing (regular interval outbound)
+description: |
+  Detects internal hosts contacting the same external destination at a low-variance
+  regular interval - a hallmark of command-and-control beaconing. Uses the standard
+  deviation of inter-connection time; low stdev with many connections is suspicious.
+  Tune minConnections and the stdev threshold to your traffic.
+severity: Medium
+requiredDataConnectors:
+  - connectorId: CEF
+    dataTypes:
+      - CommonSecurityLog
+tactics:
+  - CommandAndControl
+relevantTechniques:
+  - T1071
+query: |
+  let minConnections = 20;
+  CommonSecurityLog
+  | where DeviceVendor has 'Cisco' or DeviceProduct has 'Meraki'
+  | where ipv4_is_private(DestinationIP) == false
+  | order by SourceIP asc, DestinationIP asc, TimeGenerated asc
+  | serialize
+  | extend prevT = prev(TimeGenerated), prevS = prev(SourceIP), prevD = prev(DestinationIP)
+  | where SourceIP == prevS and DestinationIP == prevD
+  | extend GapSeconds = datetime_diff('second', TimeGenerated, prevT)
+  | summarize Connections=count(), AvgGap=avg(GapSeconds), StdevGap=stdev(GapSeconds) by SourceIP, DestinationIP, DestinationPort
+  | where Connections >= minConnections and StdevGap < (AvgGap * 0.1) and AvgGap > 30
+  | sort by Connections desc

@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {"type": "string", "metadata": {"description": "Name of the Log Analytics / Sentinel workspace"}}
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2022-11-01-preview",
+      "name": "[concat(parameters('workspace'), '/Microsoft.SecurityInsights/', '4f9d1a10-2c3b-4e6a-9b21-aa1100000004')]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Sysmon - Encoded / obfuscated PowerShell execution",
+        "description": "Sysmon process-create (EventID 1) where the command line shows encoding or download-and-execute behavior. Requires Sysmon collected into the Event table via AMA.",
+        "severity": "High",
+        "enabled": true,
+        "query": "Event | where Source == 'Microsoft-Windows-Sysmon' and EventID == 1 | where RenderedDescription has_any ('-enc','-EncodedCommand','FromBase64String','Invoke-Expression','IEX ','DownloadString','-nop','-w hidden','bypass') | project TimeGenerated, Computer, RenderedDescription",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": ["Execution"],
+        "techniques": ["T1059"],
+        "entityMappings": [
+          {"entityType": "Host", "fieldMappings": [{"identifier": "FullName", "columnName": "Computer"}]}
+        ]
+      }
+    }
+  ]
+}

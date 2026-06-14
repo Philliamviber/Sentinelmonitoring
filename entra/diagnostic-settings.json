@@ -1,0 +1,31 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "comment": "Routes Entra ID logs to the Sentinel Log Analytics workspace. Deploy at TENANT scope: az deployment tenant create --location <loc> --template-file diagnostic-settings.json --parameters workspaceResourceId=<id>"
+  },
+  "parameters": {
+    "workspaceResourceId": {"type": "string", "metadata": {"description": "Full resource ID of the Sentinel Log Analytics workspace"}},
+    "settingName": {"type": "string", "defaultValue": "entra-to-sentinel"}
+  },
+  "resources": [
+    {
+      "type": "microsoft.aadiam/diagnosticSettings",
+      "apiVersion": "2017-04-01",
+      "name": "[parameters('settingName')]",
+      "properties": {
+        "workspaceId": "[parameters('workspaceResourceId')]",
+        "logs": [
+          {"category": "SignInLogs", "enabled": true},
+          {"category": "AuditLogs", "enabled": true},
+          {"category": "NonInteractiveUserSignInLogs", "enabled": true},
+          {"category": "ServicePrincipalSignInLogs", "enabled": true},
+          {"category": "ManagedIdentitySignInLogs", "enabled": true},
+          {"category": "RiskyUsers", "enabled": true},
+          {"category": "UserRiskEvents", "enabled": true},
+          {"category": "RiskyServicePrincipals", "enabled": true}
+        ]
+      }
+    }
+  ]
+}

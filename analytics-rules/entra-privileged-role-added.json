@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "workspace": {"type": "string", "metadata": {"description": "Name of the Log Analytics / Sentinel workspace"}}
+  },
+  "resources": [
+    {
+      "type": "Microsoft.OperationalInsights/workspaces/providers/alertRules",
+      "apiVersion": "2022-11-01-preview",
+      "name": "[concat(parameters('workspace'), '/Microsoft.SecurityInsights/', '4f9d1a10-2c3b-4e6a-9b21-aa1100000005')]",
+      "kind": "Scheduled",
+      "properties": {
+        "displayName": "Entra ID - Member added to privileged directory role",
+        "description": "A user was added to an Entra directory role. Review every hit; privileged role changes should be rare and expected. Consider filtering to high-value roles (Global Administrator, Privileged Role Administrator, etc.).",
+        "severity": "High",
+        "enabled": true,
+        "query": "AuditLogs | where OperationName has 'Add member to role' | extend Actor=tostring(InitiatedBy.user.userPrincipalName), Target=tostring(TargetResources[0].userPrincipalName), Role=tostring(TargetResources[0].modifiedProperties[1].newValue) | project TimeGenerated, OperationName, Actor, Target, Role",
+        "queryFrequency": "PT1H",
+        "queryPeriod": "PT1H",
+        "triggerOperator": "GreaterThan",
+        "triggerThreshold": 0,
+        "suppressionDuration": "PT1H",
+        "suppressionEnabled": false,
+        "tactics": ["Persistence", "PrivilegeEscalation"],
+        "techniques": ["T1098"],
+        "entityMappings": [
+          {"entityType": "Account", "fieldMappings": [{"identifier": "FullName", "columnName": "Actor"}]}
+        ]
+      }
+    }
+  ]
+}
