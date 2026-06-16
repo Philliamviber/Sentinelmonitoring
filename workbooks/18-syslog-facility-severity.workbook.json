@@ -1,0 +1,12 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {"type": 1, "content": {"json": "# Syslog Traffic — Facility × Severity & Error Bursts\n**Theme:** Syslog traffic monitoring · **Data source:** `Syslog`.\n\nFacility/severity breakdown, error-burst timeline, and the processes/hosts generating them.\n\n> Severity set ('err','crit','alert','emerg') is the default error band — adjust per environment."}, "name": "title"},
+    {"type": 9, "content": {"version": "KqlParameterItem/1.0", "parameters": [{"id": "tr", "version": "KqlParameterItem/1.0", "name": "TimeRange", "type": 4, "isRequired": true, "value": {"durationMs": 86400000}, "typeSettings": {"selectableValues": [{"durationMs": 3600000}, {"durationMs": 86400000}, {"durationMs": 604800000}]}}], "style": "pills"}, "name": "params"},
+    {"type": 3, "content": {"version": "KqlItem/1.0", "query": "Syslog | summarize Events=count() by Facility, SeverityLevel | sort by Events desc", "size": 0, "title": "Facility × severity matrix", "timeContext": {"durationMs": 86400000}, "queryType": 0, "resourceType": "microsoft.operationalinsights/workspaces", "visualization": "table"}, "name": "q-matrix"},
+    {"type": 3, "content": {"version": "KqlItem/1.0", "query": "Syslog | where SeverityLevel in ('err', 'crit', 'alert', 'emerg') | summarize Errors=count() by bin(TimeGenerated, 30m), SeverityLevel | render timechart", "size": 0, "title": "Error / critical burst timeline", "timeContext": {"durationMs": 86400000}, "queryType": 0, "resourceType": "microsoft.operationalinsights/workspaces", "visualization": "timechart"}, "name": "q-bursts"},
+    {"type": 3, "content": {"version": "KqlItem/1.0", "query": "Syslog | where SeverityLevel in ('err', 'crit', 'alert', 'emerg') | summarize Errors=count() by ProcessName, Computer | top 100 by Errors desc", "size": 0, "title": "Top processes by error count", "timeContext": {"durationMs": 86400000}, "queryType": 0, "resourceType": "microsoft.operationalinsights/workspaces", "visualization": "table"}, "name": "q-proc"},
+    {"type": 3, "content": {"version": "KqlItem/1.0", "query": "Syslog | summarize Events=count() by Computer, SeverityLevel | sort by Computer asc", "size": 0, "title": "Severity mix per host", "timeContext": {"durationMs": 86400000}, "queryType": 0, "resourceType": "microsoft.operationalinsights/workspaces", "visualization": "table"}, "name": "q-mix"}
+  ],
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}

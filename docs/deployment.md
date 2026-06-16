@@ -18,6 +18,10 @@ Order matters: get data flowing first, then content.
 | Sysmon | AMA DCR collecting `Microsoft-Windows-Sysmon/Operational` → `Event` |
 | Linux / appliances | AMA Syslog DCR → `Syslog` |
 | Windows Security | AMA Security Events DCR → `SecurityEvent` |
+| Connection Monitor (availability, WB 13–16) | Network Watcher Connection Monitor → `NWConnectionMonitorTestResult` (+ `Heartbeat`) |
+| VPN/ER & vWAN gateways (WB 15, 25–27) | Gateway diagnostic settings → `AzureDiagnostics` (TunnelDiagnosticLog/IKEDiagnosticLog) + platform `AzureMetrics` |
+| Inter-region egress & vWAN flows (WB 21–24, 28) | NSG/VNet flow logs + **Traffic Analytics** → `AzureNetworkAnalytics_CL` |
+| Windows Firewall deny (WB 29–32) | AMA Windows Firewall DCR → `WindowsFirewall`; WFP audit (5152/5157) + MPSSVC policy-change audit → `SecurityEvent` |
 
 ## 2. Deploy analytics rules
 

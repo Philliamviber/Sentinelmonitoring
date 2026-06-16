@@ -1,0 +1,39 @@
+// WindowsFirewallDeny — normalize Windows Filtering Platform deny events into a tidy schema.
+// Save as a Log Analytics function (e.g. _WindowsFirewallDeny) and call it from the
+// "Windows Firewall deny" workbooks (29-32) for a single, vendor-neutral shape.
+//
+// Sources unioned:
+//   * SecurityEvent EventID 5152 (WFP blocked a packet) and 5157 (WFP blocked a connection)
+//   * WindowsFirewall table (AMA Windows Firewall DCR) where Action in ('Drop','Block')
+// ASIM-aligned output columns: TimeGenerated, Dvc, EventOriginalType, DvcAction,
+//   NetworkDirection, SrcIpAddr, DstIpAddr, DstPortNumber, NetworkProtocol, Process.
+//
+// Thresholds/keywords are starting templates — tune to your environment.
+let SE = SecurityEvent
+    | where EventID in (5152, 5157)
+    | extend
+        EventOriginalType = tostring(EventID),
+        DvcAction = "Deny",
+        NetworkDirection = case(tostring(EventData.Direction) in ("%%14592", "Inbound"), "Inbound",
+                                tostring(EventData.Direction) in ("%%14593", "Outbound"), "Outbound",
+                                tostring(EventData.Direction)),
+        SrcIpAddr = tostring(EventData.SourceAddress),
+        DstIpAddr = tostring(EventData.DestAddress),
+        DstPortNumber = tostring(EventData.DestPort),
+        NetworkProtocol = tostring(EventData.Protocol),
+        Process = tostring(EventData.Application)
+    | project TimeGenerated, Dvc = Computer, EventOriginalType, DvcAction,
+              NetworkDirection, SrcIpAddr, DstIpAddr, DstPortNumber, NetworkProtocol, Process;
+let WF = WindowsFirewall
+    | where Action in ("Drop", "Block")
+    | project TimeGenerated,
+        Dvc = Computer,
+        EventOriginalType = Action,
+        DvcAction = "Deny",
+        NetworkDirection = column_ifexists("Direction", ""),
+        SrcIpAddr = column_ifexists("SourceIP", ""),
+        DstIpAddr = column_ifexists("DestinationIP", ""),
+        DstPortNumber = tostring(column_ifexists("DestinationPort", "")),
+        NetworkProtocol = tostring(column_ifexists("Protocol", "")),
+        Process = column_ifexists("Application", "");
+union isfuzzy=true SE, WF

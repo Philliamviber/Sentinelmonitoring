@@ -2,6 +2,21 @@
 
 All notable changes to this pack are documented here. Format based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [0.2.0] - 2026-06-15
+
+### Added
+- **20-workbook Azure network observability pack** (`workbooks/13`–`32`), 4 per theme:
+  - **Network availability** (13–16): Heartbeat up/down, Connection Monitor reachability & latency, VPN/ExpressRoute gateway health, endpoint availability SLO rollup.
+  - **Syslog traffic monitoring** (17–20): volume/anomaly trends, facility×severity & error bursts, network-appliance parsing, ingestion health & silent-host detection.
+  - **Inter-region egress** (21–24): cross-region overview, egress-cost (GB) estimator, spike/exfil anomaly, VNet-peering & gateway bandwidth.
+  - **Virtual WAN traffic** (25–28): hub health/routing, site-to-site VPN gateway, ExpressRoute gateway, flow analysis & top talkers.
+  - **Windows Firewall deny** (29–32): deny overview (`WindowsFirewall` + `SecurityEvent`), 5157 blocked-connection parsing, 5152 blocked-packet parsing, policy/rule-change monitoring.
+- **`workbooks/parsers/WindowsFirewallDeny.kql`** — ASIM-aligned parser unioning `SecurityEvent` 5152/5157 and the `WindowsFirewall` table into a normalized deny schema.
+- **Docs**: `azure-monitor-network-workbooks-plan.md` (tech-lead build spec) and `community-workbooks-research.md` (reusable community/Microsoft workbook references).
+
+### Notes
+- KQL is starting templates; `_CL` column names (Traffic Analytics) and table availability are connector-dependent — verify before alerting.
+
 ## [0.1.0] - 2026-06-14
 
 ### Added

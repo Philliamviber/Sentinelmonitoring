@@ -1,6 +1,6 @@
 # Sentinel Monitoring — Threat-Hunting Pack
 
-> Import-ready Microsoft Sentinel + Entra ID threat-hunting content for a fresh environment: **9 MITRE ATT&CK-mapped workbooks**, scheduled analytics rules, Sentinel-native SOAR automation, and hunting queries.
+> Import-ready Microsoft Sentinel + Entra ID threat-hunting content for a fresh environment: **29 workbooks** (9 MITRE ATT&CK-mapped + a 20-workbook Azure network observability pack), scheduled analytics rules, Sentinel-native SOAR automation, and hunting queries.
 
 ![Platform](https://img.shields.io/badge/platform-Microsoft%20Sentinel-blue)
 ![Identity](https://img.shields.io/badge/identity-Entra%20ID-purple)
@@ -11,7 +11,7 @@
 
 | Area | Folder | Count |
 |------|--------|-------|
-| 📊 Workbooks (visual hunting dashboards) | [`workbooks/`](workbooks/) | 9 |
+| 📊 Workbooks (visual hunting dashboards) | [`workbooks/`](workbooks/) | 29 |
 | 🚨 Scheduled analytics rules (ARM) | [`analytics-rules/`](analytics-rules/) | 5 |
 | 🤖 SOAR playbooks + automation (Sentinel-native) | [`playbooks/`](playbooks/) | 2 + guide |
 | 🔎 Scheduled hunting queries | [`hunting-queries/`](hunting-queries/) | 3 |
@@ -31,6 +31,21 @@
 | 07 | Lateral Movement | RDP/SMB fan-out, failed-logon bursts | T1021, T1110 |
 | 08 | Persistence & PrivEsc | New accounts, group/role adds, services | T1136, T1098, T1543 |
 | 09 | MITRE ATT&CK Coverage | Dashboard of dashboards — blind-spot view | (overview) |
+
+## Azure network observability pack (13–32)
+
+A 20-workbook pack for Azure Monitor network telemetry. See the build spec in
+[`docs/azure-monitor-network-workbooks-plan.md`](docs/azure-monitor-network-workbooks-plan.md)
+and reusable community references in
+[`docs/community-workbooks-research.md`](docs/community-workbooks-research.md).
+
+| # range | Theme | Primary data source(s) |
+|---------|-------|------------------------|
+| 13–16 | Network availability | `Heartbeat`, `NWConnectionMonitorTestResult`, `AzureDiagnostics`/`AzureMetrics` (gateways) |
+| 17–20 | Syslog traffic monitoring | `Syslog` (+ `Heartbeat` for ingestion health) |
+| 21–24 | Inter-region egress | `AzureNetworkAnalytics_CL` (Traffic Analytics), `AzureMetrics` |
+| 25–28 | Virtual WAN traffic | `AzureDiagnostics` (VIRTUALHUBS / VPNGATEWAYS / EXPRESSROUTEGATEWAYS), `AzureNetworkAnalytics_CL` |
+| 29–32 | Windows Firewall deny | `WindowsFirewall` (Drop/Block), `SecurityEvent` (5152/5157/5031/49xx) + `parsers/WindowsFirewallDeny.kql` |
 
 ## Quick start
 
